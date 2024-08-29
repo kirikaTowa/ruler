@@ -8,8 +8,9 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements RulerView.MoveDistanceCallBack {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,6 +18,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        //支持转动180
+        RulerView rulerView = (RulerView) findViewById(R.id.ruler_view);
+        rulerView.setRotation(180F);
+        rulerView.setMoveDistanceCallBack(MainActivity.this);
     }
 
     @Override
@@ -45,5 +51,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void distanceCallBack(String distance) {
+        TextView tvValue = (TextView) findViewById(R.id.tv_mine_title);
+        tvValue.setText(distance);
     }
 }

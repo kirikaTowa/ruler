@@ -7,7 +7,6 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
@@ -57,6 +56,7 @@ public class RulerView extends View {
     private float pointerStrokeWidth;
     private int pointerColor;
 
+    private MoveDistanceCallBack mMoveDistanceCallBack;
     /**
      * Creates a new RulerView.
      */
@@ -82,10 +82,11 @@ public class RulerView extends View {
         graduatedScaleWidth = a.getDimension(R.styleable.RulerView_graduatedScaleWidth, 8);
         graduatedScaleBaseLength =
                 a.getDimension(R.styleable.RulerView_graduatedScaleBaseLength, 100);
-        scaleColor = a.getColor(R.styleable.RulerView_scaleColor, 0xFF03070A);
+        scaleColor = a.getColor(R.styleable.RulerView_scaleColor, 0xFFDC143C);
 
         labelTextSize = a.getDimension(R.styleable.RulerView_labelTextSize, 60);
         defaultLabelText = a.getString(R.styleable.RulerView_defaultLabelText);
+
         if (defaultLabelText == null) {
             defaultLabelText = "Measure with two fingers";
         }
@@ -99,7 +100,7 @@ public class RulerView extends View {
 
         dm = getResources().getDisplayMetrics();
         unit = new Unit(dm.ydpi);
-        unit.setType(a.getInt(R.styleable.RulerView_unit, 0));
+        unit.setType(a.getInt(R.styleable.RulerView_unit, RulerView.Unit.CM));
 
         a.recycle();
 
@@ -117,7 +118,7 @@ public class RulerView extends View {
 
     private void initRulerView() {
         activePointers = new SparseArray<>();
-
+        //不知道有什么卵用
         scalePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         scalePaint.setStrokeWidth(graduatedScaleWidth);
         scalePaint.setTextSize(guideScaleTextSize);
@@ -169,10 +170,11 @@ public class RulerView extends View {
             }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
-            case MotionEvent.ACTION_CANCEL: {
-                activePointers.remove(pointerId);
-                break;
-            }
+            case MotionEvent.ACTION_CANCEL:
+//            {
+//                activePointers.remove(pointerId);
+//                break;
+//            }
         }
         invalidate();
 
@@ -252,12 +254,15 @@ public class RulerView extends View {
         }
 
         // Draw Text label.
-        String labelText = defaultLabelText;
+
+        String labelText = "1cm";
         if (topPointer != null) {
             float distanceInPixels = Math.abs(topPointer.y - bottomPointer.y);
-            labelText = unit.getStringRepresentation(distanceInPixels / unit.getPixelsPerUnit());
+            //labelText = unit.getStringRepresentation(distanceInPixels / unit.getPixelsPerUnit());
+            labelText = unit.getStringRepresentationPure(distanceInPixels / unit.getPixelsPerUnit());
         }
-        canvas.drawText(labelText, paddingLeft, paddingTop + labelTextSize, labelPaint);
+        mMoveDistanceCallBack.distanceCallBack(labelText);
+        //canvas.drawText(, paddingLeft, paddingTop + labelTextSize, labelPaint);
     }
 
     @Override
@@ -292,7 +297,7 @@ public class RulerView extends View {
         public static final int INCH = 0;
         public static final int CM = 1;
 
-        private int type = INCH;
+        private int type = CM;
         private float dpi;
 
         Unit(float dpi) {
@@ -313,6 +318,10 @@ public class RulerView extends View {
                 suffix = "CM";
             }
             return String.format("%.3f %s", value, suffix);
+        }
+
+        public String getStringRepresentationPure(float value) {
+            return String.format("%.3f", value);
         }
 
         public Iterator<Graduation> getPixelIterator(final int numberOfPixels) {
@@ -392,4 +401,12 @@ public class RulerView extends View {
 
     }
 
+
+    public void setMoveDistanceCallBack(MoveDistanceCallBack callBack) {
+        mMoveDistanceCallBack = callBack;
+    }
+
+    public interface MoveDistanceCallBack {
+        public void distanceCallBack(String distance);
+    }
 }

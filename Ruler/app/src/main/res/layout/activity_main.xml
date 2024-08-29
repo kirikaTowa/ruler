@@ -24,4 +24,14 @@
 
     <include layout="@layout/content_main" />
 
+    <TextView
+        android:id="@+id/tv_mine_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="140dp"
+        android:layout_marginTop="59dp"
+        android:text="测算数值"
+        android:gravity="center"
+        android:textColor="#000000"
+        android:textSize="24sp" />
 </android.support.design.widget.CoordinatorLayout>

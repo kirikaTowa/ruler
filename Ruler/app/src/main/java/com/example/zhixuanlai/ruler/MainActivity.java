@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity implements RulerView.MoveDis
 
         //支持转动180
         RulerView rulerView = (RulerView) findViewById(R.id.ruler_view);
-        rulerView.setRotation(180F);
+        //rulerView.setRotation(180F);
         rulerView.setMoveDistanceCallBack(MainActivity.this);
     }
 

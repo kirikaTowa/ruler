@@ -20,6 +20,7 @@
     <com.example.zhixuanlai.ruler.RulerView
         style="@style/RulerViewStyle"
         android:id="@+id/ruler_view"
+        app:backgroundColor="#ffffff"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

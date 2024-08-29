@@ -2,7 +2,11 @@ package com.example.zhixuanlai.ruler;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.AttributeSet;
@@ -56,6 +60,10 @@ public class RulerView extends View {
     private float pointerStrokeWidth;
     private int pointerColor;
 
+    private Bitmap bitmap;
+    private int resPointer;
+    private Paint mPaint;
+
     private MoveDistanceCallBack mMoveDistanceCallBack;
     /**
      * Creates a new RulerView.
@@ -75,34 +83,36 @@ public class RulerView extends View {
     public RulerView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
 
-        final TypedArray a = context.obtainStyledAttributes(
+        final TypedArray typedArray = context.obtainStyledAttributes(
                 attrs, R.styleable.RulerView, defStyleAttr, defStyleRes);
 
-        guideScaleTextSize = a.getDimension(R.styleable.RulerView_guideScaleTextSize, 40);
-        graduatedScaleWidth = a.getDimension(R.styleable.RulerView_graduatedScaleWidth, 8);
+        guideScaleTextSize = typedArray.getDimension(R.styleable.RulerView_guideScaleTextSize, 40);
+        graduatedScaleWidth = typedArray.getDimension(R.styleable.RulerView_graduatedScaleWidth, 8);
         graduatedScaleBaseLength =
-                a.getDimension(R.styleable.RulerView_graduatedScaleBaseLength, 100);
-        scaleColor = a.getColor(R.styleable.RulerView_scaleColor, 0xFFDC143C);
+                typedArray.getDimension(R.styleable.RulerView_graduatedScaleBaseLength, 100);
+        scaleColor = typedArray.getColor(R.styleable.RulerView_scaleColor, 0xFFDC143C);
 
-        labelTextSize = a.getDimension(R.styleable.RulerView_labelTextSize, 60);
-        defaultLabelText = a.getString(R.styleable.RulerView_defaultLabelText);
+        labelTextSize = typedArray.getDimension(R.styleable.RulerView_labelTextSize, 60);
+        defaultLabelText = typedArray.getString(R.styleable.RulerView_defaultLabelText);
 
         if (defaultLabelText == null) {
             defaultLabelText = "Measure with two fingers";
         }
-        labelColor = a.getColor(R.styleable.RulerView_labelColor, 0xFF03070A);
+        labelColor = typedArray.getColor(R.styleable.RulerView_labelColor, 0xFF03070A);
 
-        backgroundColor = a.getColor(R.styleable.RulerView_backgroundColor, 0xFFFACC31);
+        backgroundColor = typedArray.getColor(R.styleable.RulerView_backgroundColor, 0xFFFACC31);
 
-        pointerColor = a.getColor(R.styleable.RulerView_pointerColor, 0xFF03070A);
-        pointerRadius = a.getDimension(R.styleable.RulerView_pointerRadius, 60);
-        pointerStrokeWidth = a.getDimension(R.styleable.RulerView_pointerStrokeWidth, 8);
+        pointerColor = typedArray.getColor(R.styleable.RulerView_pointerColor, 0xFF03070A);
+        pointerRadius = typedArray.getDimension(R.styleable.RulerView_pointerRadius, 60);
+        pointerStrokeWidth = typedArray.getDimension(R.styleable.RulerView_pointerStrokeWidth, 8);
+
+        resPointer = typedArray.getResourceId(R.styleable.RulerView_resPointer, R.drawable.pointer_icon);
 
         dm = getResources().getDisplayMetrics();
         unit = new Unit(dm.ydpi);
-        unit.setType(a.getInt(R.styleable.RulerView_unit, RulerView.Unit.CM));
+        unit.setType(typedArray.getInt(R.styleable.RulerView_unit, RulerView.Unit.CM));
 
-        a.recycle();
+        typedArray.recycle();
 
         initRulerView();
     }
@@ -184,6 +194,21 @@ public class RulerView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        if (mPaint == null) {
+            mPaint = new Paint();
+            mPaint.setStrokeWidth(5);
+            mPaint.setColor(Color.RED);
+            mPaint.setAntiAlias(true);
+
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inSampleSize = 2;
+            bitmap = BitmapFactory.decodeResource(getResources(), resPointer, options);
+            Matrix matrix = new Matrix();
+            matrix.postRotate(-90, bitmap.getWidth(), bitmap.getHeight());
+            Bitmap rotateBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            bitmap.recycle();
+            bitmap = rotateBitmap;
+        }
 
         int width = getWidth();
         int height = getHeight();
@@ -227,42 +252,31 @@ public class RulerView extends View {
             if (bottomPointer == null || bottomPointer.y > pointer.y) {
                 bottomPointer = pointer;
             }
-            canvas.drawArc(
-                    pointer.x - pointerRadius,
-                    pointer.y - pointerRadius,
-                    pointer.x + pointerRadius,
-                    pointer.y + pointerRadius,
-                    0f,
-                    360f,
-                    false,
-                    pointerPaint);
         }
 
         if (topPointer != null) {
-            canvas.drawLine(
-                    topPointer.x + pointerRadius,
-                    topPointer.y,
-                    width,
-                    topPointer.y,
-                    pointerPaint);
-            canvas.drawLine(
-                    bottomPointer.x + pointerRadius,
-                    bottomPointer.y,
-                    width,
-                    bottomPointer.y,
-                    pointerPaint);
+
+            Matrix matrix = new Matrix();
+            int offsetX = bitmap.getWidth();
+            int offsetY = bitmap.getHeight();
+            matrix.preTranslate( width - offsetX, topPointer.y - offsetY / 2f);
+
+            canvas.drawBitmap(bitmap, matrix, mPaint);
+
+            Matrix matrixR = new Matrix();
+            matrixR.preTranslate( width - offsetX,  bottomPointer.y - offsetY / 2f);
+
+            canvas.drawBitmap(bitmap, matrixR, mPaint);
+
         }
 
         // Draw Text label.
-
         String labelText = "1cm";
         if (topPointer != null) {
             float distanceInPixels = Math.abs(topPointer.y - bottomPointer.y);
-            //labelText = unit.getStringRepresentation(distanceInPixels / unit.getPixelsPerUnit());
             labelText = unit.getStringRepresentationPure(distanceInPixels / unit.getPixelsPerUnit());
         }
         mMoveDistanceCallBack.distanceCallBack(labelText);
-        //canvas.drawText(, paddingLeft, paddingTop + labelTextSize, labelPaint);
     }
 
     @Override

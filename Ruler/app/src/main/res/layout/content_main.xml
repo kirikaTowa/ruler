@@ -21,6 +21,7 @@
         style="@style/RulerViewStyle"
         android:id="@+id/ruler_view"
         app:backgroundColor="#ffffff"
+        app:scaleColor="#000000"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

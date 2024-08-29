@@ -11,7 +11,6 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -26,27 +25,18 @@ public class RulerView extends View {
 
     private DisplayMetrics dm;
 
-    private Paint scalePaint;
-    private Paint labelPaint;
+    private Paint scalePaint;//刻度线
     private Paint backgroundPaint;
-    private Paint pointerPaint;
 
     private float guideScaleTextSize;
     private float graduatedScaleWidth;
     private float graduatedScaleBaseLength;
     private int scaleColor;
 
-    private float labelTextSize;
-    private String defaultLabelText;
-    private int labelColor;
-
+    private String textUnit="cm";
     private int backgroundColor;
 
-    private float pointerRadius;
-    private float pointerStrokeWidth;
-    private int pointerColor;
 
-    private PointF mGuidePoint;
     private Bitmap bitmap;
     private int resPointer;
     private Paint mPaint;
@@ -56,9 +46,10 @@ public class RulerView extends View {
 
     PointF topPointer = null;
     PointF bottomPointer = null;
-
+    int paddingTop=0;
 
     private MoveDistanceCallBack mMoveDistanceCallBack;
+
     /**
      * Creates a new RulerView.
      */
@@ -89,22 +80,13 @@ public class RulerView extends View {
         graduatedScaleWidth = typedArray.getDimension(R.styleable.RulerView_graduatedScaleWidth, 8);
         graduatedScaleBaseLength =
                 typedArray.getDimension(R.styleable.RulerView_graduatedScaleBaseLength, 100);
-        scaleColor = typedArray.getColor(R.styleable.RulerView_scaleColor, 0xFFDC143C);
-
-        labelTextSize = typedArray.getDimension(R.styleable.RulerView_labelTextSize, 60);
-        defaultLabelText = typedArray.getString(R.styleable.RulerView_defaultLabelText);
-
-        if (defaultLabelText == null) {
-            defaultLabelText = "Measure with two fingers";
-        }
-        labelColor = typedArray.getColor(R.styleable.RulerView_labelColor, 0xFF03070A);
+        scaleColor = typedArray.getColor(R.styleable.RulerView_scaleColor, 0xFFFACC31);
+        String targetText=typedArray.getString(R.styleable.RulerView_scaleUnit);
+       if (targetText!=null){
+           textUnit=targetText;
+       }
 
         backgroundColor = typedArray.getColor(R.styleable.RulerView_backgroundColor, 0xFFFACC31);
-
-        pointerColor = typedArray.getColor(R.styleable.RulerView_pointerColor, 0xFF03070A);
-        pointerRadius = typedArray.getDimension(R.styleable.RulerView_pointerRadius, 60);
-        pointerStrokeWidth = typedArray.getDimension(R.styleable.RulerView_pointerStrokeWidth, 8);
-
         resPointer = typedArray.getResourceId(R.styleable.RulerView_resPointer, R.drawable.pointer_icon);
 
         dm = getResources().getDisplayMetrics();
@@ -112,7 +94,6 @@ public class RulerView extends View {
         unit.setType(typedArray.getInt(R.styleable.RulerView_unit, RulerView.Unit.CM));
 
         typedArray.recycle();
-
 
 
         initRulerView();
@@ -129,44 +110,25 @@ public class RulerView extends View {
 
     private void initRulerView() {
 
-
-        //不知道有什么卵用
         scalePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         scalePaint.setStrokeWidth(graduatedScaleWidth);
         scalePaint.setTextSize(guideScaleTextSize);
         scalePaint.setColor(scaleColor);
 
-        labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        labelPaint.setTextSize(labelTextSize);
-        labelPaint.setColor(labelColor);
-
         backgroundPaint = new Paint();
         backgroundPaint.setColor(backgroundColor);
-
-        pointerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        pointerPaint.setColor(pointerColor);
-        pointerPaint.setStrokeWidth(pointerStrokeWidth);
-        pointerPaint.setStyle(Paint.Style.STROKE);
     }
 
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        mGuidePoint =new PointF(getWidth(), 0);
 
-        topPointer=new PointF(getWidth(), 70);
-        bottomPointer=new PointF(getWidth(), 250);
+        topPointer = new PointF(getWidth(), 70);
+        bottomPointer = new PointF(getWidth(), 250);
     }
 
-    //
 
-    /**
-     * 思路:多点触控
-     * event.getPointerId(event.getActionIndex())在多点触控过程中，Index 可能会变，但是Id 不会变,
-     * 分别是0,1
-     * 所以控制每次相同的ID控制对应的点位
-     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
@@ -189,6 +151,10 @@ public class RulerView extends View {
     }
 
     private void computerAngle(PointF pointF) {
+        if (pointF.y<paddingTop){
+            pointF.y=paddingTop;
+        }
+
         if (moveType == 1) {
             topPointer.y = pointF.y;
             invalidate();
@@ -196,20 +162,13 @@ public class RulerView extends View {
             bottomPointer.y = pointF.y;
             invalidate();
         }
-
     }
+
     private void computerMoveDirection(PointF downPoint) {
         moveType = 0;
 
-        double distanceToLine1 = pointToLine( topPointer, downPoint);
+        double distanceToLine1 = pointToLine(topPointer, downPoint);
         double distanceToLine2 = pointToLine(bottomPointer, downPoint);
-
-        Log.d("yeTest", "downPoint: " + downPoint);
-        Log.d("yeTest", "topPointer: " + topPointer);
-        Log.d("yeTest", "bottomPointer: " + bottomPointer);
-        Log.d("yeTest", "distanceToLine1: " + distanceToLine1);
-        Log.d("yeTest", "distanceToLine2: " + distanceToLine2);
-
 
         if (distanceToLine1 < MOVE_DISTANCE) {
             moveType = 1;
@@ -218,22 +177,12 @@ public class RulerView extends View {
             moveType = 2;
         }
 
-        Log.d("yeTest", "查看点击: "+moveType);
     }
 
-    // 点到直线的最短距离的判断 点（x0,y0） 到由两点组成的线段（x1,y1） ,( x2,y2 )
     private double pointToLine(PointF endPoint, PointF downPoint) {
         double space = 0;
-        space=Math.abs(downPoint.y-endPoint.y);
+        space = Math.abs(downPoint.y - endPoint.y);
         return space;
-    }
-
-    // 计算两点之间的距离
-    private double lineSpace(PointF point1, PointF point2) {
-        double lineLength = 0;
-        lineLength = Math.sqrt((point1.x - point2.x) * (point1.x - point2.x) + (point1.y - point2.y)
-                * (point1.y - point2.y));
-        return lineLength;
     }
 
 
@@ -259,15 +208,14 @@ public class RulerView extends View {
 
         int width = getWidth();
         int height = getHeight();
-        int paddingTop = getPaddingTop();
-        int paddingLeft = getPaddingLeft();
+        paddingTop = getPaddingTop();
 
         // Draw background.
         canvas.drawPaint(backgroundPaint);
 
         // Draw scale.
         Iterator<Unit.Graduation> pixelsIterator = unit.getPixelIterator(height - paddingTop);
-        while(pixelsIterator.hasNext()) {
+        while (pixelsIterator.hasNext()) {
             Unit.Graduation graduation = pixelsIterator.next();
 
             float startX = width - graduation.relativeLength * graduatedScaleBaseLength;
@@ -277,7 +225,7 @@ public class RulerView extends View {
             canvas.drawLine(startX, startY, endX, endY, scalePaint);
 
             if (graduation.value % 1 == 0) {
-                String text = (int) graduation.value + "";
+                String text = (int) graduation.value + textUnit;
 
                 canvas.save();
                 canvas.translate(
@@ -292,11 +240,11 @@ public class RulerView extends View {
             Matrix matrix = new Matrix();
             int offsetX = bitmap.getWidth();
             int offsetY = bitmap.getHeight();
-            matrix.preTranslate( width - offsetX, topPointer.y - offsetY / 2f);
+            matrix.preTranslate(width - offsetX, topPointer.y - offsetY / 2f);
             canvas.drawBitmap(bitmap, matrix, mPaint);
 
             Matrix matrixR = new Matrix();
-            matrixR.preTranslate( width - offsetX,  bottomPointer.y - offsetY / 2f);
+            matrixR.preTranslate(width - offsetX, bottomPointer.y - offsetY / 2f);
             canvas.drawBitmap(bitmap, matrixR, mPaint);
 
         }
@@ -394,7 +342,7 @@ public class RulerView extends View {
                     graduation.pixelOffset = getPixels();
                     graduation.relativeLength = getGraduatedScaleRelativeLength(graduationIndex);
 
-                    graduationIndex ++;
+                    graduationIndex++;
                     return graduation;
                 }
 
@@ -427,7 +375,7 @@ public class RulerView extends View {
             if (type == INCH) {
                 if (graduationIndex % 4 == 0) {
                     return 1f;
-                } else if (graduationIndex% 2 == 0) {
+                } else if (graduationIndex % 2 == 0) {
                     return 3 / 4f;
                 } else {
                     return 1 / 2f;

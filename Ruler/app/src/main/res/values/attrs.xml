@@ -6,18 +6,11 @@
             <enum name="cm" value="1"/>
         </attr>
 
-        <attr name="guideScaleTextSize" format="dimension" />
-        <attr name="graduatedScaleWidth" format="dimension" />
-        <attr name="graduatedScaleBaseLength" format="dimension" />
-        <attr name="scaleColor" format="color" />
-
-        <attr name="pointerRadius" format="dimension" />
-        <attr name="pointerStrokeWidth" format="dimension" />
-        <attr name="pointerColor" format="color" />
-
-        <attr name="labelTextSize" format="dimension" />
-        <attr name="defaultLabelText" format="string" />
-        <attr name="labelColor" format="color" />
+        <attr name="guideScaleTextSize" format="dimension" /><!--刻度对应文字大小-->
+        <attr name="graduatedScaleWidth" format="dimension" /><!--刻度粗细-->
+        <attr name="graduatedScaleBaseLength" format="dimension" /><!--刻度长度-->
+        <attr name="scaleColor" format="color" /><!--文字颜色-->
+        <attr name="scaleUnit" format="color" /><!--文字单位-->
 
         <attr name="backgroundColor" format="color" />
         <attr name="resPointer" format="reference|color" />

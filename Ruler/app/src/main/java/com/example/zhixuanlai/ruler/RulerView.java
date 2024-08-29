@@ -11,24 +11,11 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.SparseArray;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.Iterator;
-
-/*
-Documentation referenced:
-
-http://developer.android.com/training/custom-views/index.html
-http://developer.android.com/training/custom-views/create-view.html
-http://developer.android.com/training/custom-views/custom-drawing.html
-http://developer.android.com/training/custom-views/making-interactive.html
-http://developer.android.com/training/custom-views/optimizing-view.html
-
-http://developer.android.com/reference/android/graphics/Canvas.html
-http://developer.android.com/reference/android/graphics/Paint.html
-*/
 
 /**
  * Screen size independent ruler view.
@@ -38,7 +25,6 @@ public class RulerView extends View {
     private Unit unit;
 
     private DisplayMetrics dm;
-    private SparseArray<PointF> activePointers;
 
     private Paint scalePaint;
     private Paint labelPaint;
@@ -60,9 +46,17 @@ public class RulerView extends View {
     private float pointerStrokeWidth;
     private int pointerColor;
 
+    private PointF mGuidePoint;
     private Bitmap bitmap;
     private int resPointer;
     private Paint mPaint;
+
+    private static final float MOVE_DISTANCE = 100;
+    int moveType = 0;
+
+    PointF topPointer = null;
+    PointF bottomPointer = null;
+
 
     private MoveDistanceCallBack mMoveDistanceCallBack;
     /**
@@ -70,21 +64,26 @@ public class RulerView extends View {
      */
     public RulerView(Context context) {
         this(context, null);
+        init(context, null, 0);
     }
 
     public RulerView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
+        init(context, attrs, 0);
     }
 
     public RulerView(Context context, AttributeSet attrs, int defStyleAttr) {
         this(context, attrs, defStyleAttr, 0);
+
     }
 
     public RulerView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+        init(context, attrs, 0);
+    }
 
-        final TypedArray typedArray = context.obtainStyledAttributes(
-                attrs, R.styleable.RulerView, defStyleAttr, defStyleRes);
+    private void init(Context context, AttributeSet attrs, int s) {
+        TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.RulerView);
 
         guideScaleTextSize = typedArray.getDimension(R.styleable.RulerView_guideScaleTextSize, 40);
         graduatedScaleWidth = typedArray.getDimension(R.styleable.RulerView_graduatedScaleWidth, 8);
@@ -114,6 +113,8 @@ public class RulerView extends View {
 
         typedArray.recycle();
 
+
+
         initRulerView();
     }
 
@@ -127,7 +128,8 @@ public class RulerView extends View {
     }
 
     private void initRulerView() {
-        activePointers = new SparseArray<>();
+
+
         //不知道有什么卵用
         scalePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         scalePaint.setStrokeWidth(graduatedScaleWidth);
@@ -147,53 +149,98 @@ public class RulerView extends View {
         pointerPaint.setStyle(Paint.Style.STROKE);
     }
 
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        mGuidePoint =new PointF(getWidth(), 0);
+
+        topPointer=new PointF(getWidth(), 70);
+        bottomPointer=new PointF(getWidth(), 250);
+    }
+
     //
 
     /**
      * 思路:多点触控
-     * event.getPointerId(event.getActionIndex())在多点触控过程中，Index 可能会变，但是Id 不会变
+     * event.getPointerId(event.getActionIndex())在多点触控过程中，Index 可能会变，但是Id 不会变,
+     * 分别是0,1
      * 所以控制每次相同的ID控制对应的点位
      */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        int pointerIndex = event.getActionIndex();
-        int pointerId = event.getPointerId(pointerIndex);
-
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_POINTER_DOWN: {
-                PointF position = new PointF(event.getX(pointerIndex), event.getY(pointerIndex));
-                activePointers.put(pointerId, position);
+                computerMoveDirection(new PointF(event.getX(), event.getY()));
+            case MotionEvent.ACTION_MOVE:
+                PointF pointF = new PointF(event.getX(), event.getY());
+                computerAngle(pointF);
                 break;
-            }
-            case MotionEvent.ACTION_MOVE: {
-                int numberOfPointers = event.getPointerCount();
-                for (int i = 0; i < numberOfPointers; i++) {
-                    PointF point = activePointers.get(event.getPointerId(i));
-                    if (point == null) {
-                        continue;
-                    }
-                    point.x = event.getX(i);
-                    point.y = event.getY(i);
-                }
-                break;
-            }
+
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
             case MotionEvent.ACTION_CANCEL:
-//            {
-//                activePointers.remove(pointerId);
-//                break;
-//            }
+            default:
+                break;
         }
-        invalidate();
+
 
         return true;
     }
 
+    private void computerAngle(PointF pointF) {
+        if (moveType == 1) {
+            topPointer.y = pointF.y;
+            invalidate();
+        } else if (moveType == 2) {
+            bottomPointer.y = pointF.y;
+            invalidate();
+        }
+
+    }
+    private void computerMoveDirection(PointF downPoint) {
+        moveType = 0;
+
+        double distanceToLine1 = pointToLine( topPointer, downPoint);
+        double distanceToLine2 = pointToLine(bottomPointer, downPoint);
+
+        Log.d("yeTest", "downPoint: " + downPoint);
+        Log.d("yeTest", "topPointer: " + topPointer);
+        Log.d("yeTest", "bottomPointer: " + bottomPointer);
+        Log.d("yeTest", "distanceToLine1: " + distanceToLine1);
+        Log.d("yeTest", "distanceToLine2: " + distanceToLine2);
+
+
+        if (distanceToLine1 < MOVE_DISTANCE) {
+            moveType = 1;
+        }
+        if (distanceToLine1 > distanceToLine2 && distanceToLine2 < MOVE_DISTANCE) {
+            moveType = 2;
+        }
+
+        Log.d("yeTest", "查看点击: "+moveType);
+    }
+
+    // 点到直线的最短距离的判断 点（x0,y0） 到由两点组成的线段（x1,y1） ,( x2,y2 )
+    private double pointToLine(PointF endPoint, PointF downPoint) {
+        double space = 0;
+        space=Math.abs(downPoint.y-endPoint.y);
+        return space;
+    }
+
+    // 计算两点之间的距离
+    private double lineSpace(PointF point1, PointF point2) {
+        double lineLength = 0;
+        lineLength = Math.sqrt((point1.x - point2.x) * (point1.x - point2.x) + (point1.y - point2.y)
+                * (point1.y - point2.y));
+        return lineLength;
+    }
+
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
         if (mPaint == null) {
             mPaint = new Paint();
             mPaint.setStrokeWidth(5);
@@ -241,31 +288,15 @@ public class RulerView extends View {
             }
         }
 
-        // Draw active pointers.
-        PointF topPointer = null;
-        PointF bottomPointer = null;
-        for (int i = 0, numberOfPointers = activePointers.size(); i < numberOfPointers; i++) {
-            PointF pointer = activePointers.valueAt(i);
-            if (topPointer == null || topPointer.y < pointer.y) {
-                topPointer = pointer;
-            }
-            if (bottomPointer == null || bottomPointer.y > pointer.y) {
-                bottomPointer = pointer;
-            }
-        }
-
         if (topPointer != null) {
-
             Matrix matrix = new Matrix();
             int offsetX = bitmap.getWidth();
             int offsetY = bitmap.getHeight();
             matrix.preTranslate( width - offsetX, topPointer.y - offsetY / 2f);
-
             canvas.drawBitmap(bitmap, matrix, mPaint);
 
             Matrix matrixR = new Matrix();
             matrixR.preTranslate( width - offsetX,  bottomPointer.y - offsetY / 2f);
-
             canvas.drawBitmap(bitmap, matrixR, mPaint);
 
         }

@@ -16,8 +16,6 @@ public class MainActivity extends AppCompatActivity implements RulerView.MoveDis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
         //支持转动180
         RulerView rulerView = (RulerView) findViewById(R.id.ruler_view);

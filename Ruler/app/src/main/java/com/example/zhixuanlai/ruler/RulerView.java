@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
@@ -135,6 +136,13 @@ public class RulerView extends View {
         pointerPaint.setStyle(Paint.Style.STROKE);
     }
 
+    //
+
+    /**
+     * 思路:多点触控
+     * event.getPointerId(event.getActionIndex())在多点触控过程中，Index 可能会变，但是Id 不会变
+     * 所以控制每次相同的ID控制对应的点位
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int pointerIndex = event.getActionIndex();

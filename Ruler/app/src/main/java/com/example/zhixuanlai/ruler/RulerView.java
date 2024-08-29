@@ -125,7 +125,7 @@ public class RulerView extends View {
         super.onSizeChanged(w, h, oldw, oldh);
 
         topPointer = new PointF(getWidth(), 70);
-        bottomPointer = new PointF(getWidth(), 250);
+        bottomPointer = new PointF(getWidth(), 220);
     }
 
 
@@ -255,7 +255,10 @@ public class RulerView extends View {
             float distanceInPixels = Math.abs(topPointer.y - bottomPointer.y);
             labelText = unit.getStringRepresentationPure(distanceInPixels / unit.getPixelsPerUnit());
         }
-        mMoveDistanceCallBack.distanceCallBack(labelText);
+        if (mMoveDistanceCallBack!=null){
+            mMoveDistanceCallBack.distanceCallBack(labelText);
+        }
+
     }
 
     @Override
@@ -314,7 +317,7 @@ public class RulerView extends View {
         }
 
         public String getStringRepresentationPure(float value) {
-            return String.format("%.3f", value);
+            return String.format("%.3f %s", value,textUnit);
         }
 
         public Iterator<Graduation> getPixelIterator(final int numberOfPixels) {

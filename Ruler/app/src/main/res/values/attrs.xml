@@ -15,5 +15,8 @@
         <attr name="backgroundColor" format="color" />
         <attr name="resPointer" format="reference|color" />
 
+        <attr name="distanceTop" format="integer" />
+        <attr name="distanceBottom" format="integer" />
+
     </declare-styleable>
 </resources>

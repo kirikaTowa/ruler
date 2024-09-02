@@ -49,6 +49,9 @@ public class RulerView extends View {
     int paddingTop = 0;
     int paddingBottom = 0;
 
+    private int distanceTop = 70;
+    private int distanceBottom = 225;
+
     private MoveDistanceCallBack mMoveDistanceCallBack;
 
     /**
@@ -90,6 +93,9 @@ public class RulerView extends View {
         backgroundColor = typedArray.getColor(R.styleable.RulerView_backgroundColor, 0xFFFACC31);
         resPointer = typedArray.getResourceId(R.styleable.RulerView_resPointer, R.drawable.pointer_icon);
 
+        distanceTop =  typedArray.getInt(R.styleable.RulerView_distanceTop, distanceTop);
+        distanceBottom = typedArray.getInt(R.styleable.RulerView_distanceBottom, distanceBottom);
+
         dm = getResources().getDisplayMetrics();
         unit = new Unit(dm.ydpi);
         unit.setType(typedArray.getInt(R.styleable.RulerView_unit, RulerView.Unit.CM));
@@ -125,8 +131,8 @@ public class RulerView extends View {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
 
-        topPointer = new PointF(getWidth(), 70);
-        bottomPointer = new PointF(getWidth(), 220);
+        topPointer = new PointF(getWidth(), distanceTop);
+        bottomPointer = new PointF(getWidth(), distanceBottom);
     }
 
 

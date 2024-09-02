@@ -208,7 +208,7 @@ public class RulerView extends View {
             mPaint.setAntiAlias(true);
 
             BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = 2;
+            //options.inSampleSize = 2;
             bitmap = BitmapFactory.decodeResource(getResources(), resPointer, options);
             Matrix matrix = new Matrix();
             matrix.postRotate(-90, bitmap.getWidth(), bitmap.getHeight());

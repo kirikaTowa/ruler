@@ -33,7 +33,7 @@ public class RulerView extends View {
     private float graduatedScaleBaseLength;
     private int scaleColor;
 
-    private String textUnit="cm";
+    private String textUnit = "cm";
     private int backgroundColor;
 
 
@@ -46,7 +46,8 @@ public class RulerView extends View {
 
     PointF topPointer = null;
     PointF bottomPointer = null;
-    int paddingTop=0;
+    int paddingTop = 0;
+    int paddingBottom = 0;
 
     private MoveDistanceCallBack mMoveDistanceCallBack;
 
@@ -81,10 +82,10 @@ public class RulerView extends View {
         graduatedScaleBaseLength =
                 typedArray.getDimension(R.styleable.RulerView_graduatedScaleBaseLength, 100);
         scaleColor = typedArray.getColor(R.styleable.RulerView_scaleColor, 0xFFFACC31);
-        String targetText=typedArray.getString(R.styleable.RulerView_scaleUnit);
-       if (targetText!=null){
-           textUnit=targetText;
-       }
+        String targetText = typedArray.getString(R.styleable.RulerView_scaleUnit);
+        if (targetText != null) {
+            textUnit = targetText;
+        }
 
         backgroundColor = typedArray.getColor(R.styleable.RulerView_backgroundColor, 0xFFFACC31);
         resPointer = typedArray.getResourceId(R.styleable.RulerView_resPointer, R.drawable.pointer_icon);
@@ -151,8 +152,12 @@ public class RulerView extends View {
     }
 
     private void computerAngle(PointF pointF) {
-        if (pointF.y<paddingTop){
-            pointF.y=paddingTop;
+        if (pointF.y < paddingTop) {
+            pointF.y = paddingTop;
+        }
+
+        if (pointF.y > getHeight() - paddingBottom) {
+            pointF.y = getHeight() - paddingBottom;
         }
 
         if (moveType == 1) {
@@ -209,12 +214,13 @@ public class RulerView extends View {
         int width = getWidth();
         int height = getHeight();
         paddingTop = getPaddingTop();
+        paddingBottom = getPaddingBottom();
 
         // Draw background.
         canvas.drawPaint(backgroundPaint);
 
         // Draw scale.
-        Iterator<Unit.Graduation> pixelsIterator = unit.getPixelIterator(height - paddingTop);
+        Iterator<Unit.Graduation> pixelsIterator = unit.getPixelIterator(height - paddingTop - paddingBottom);
         while (pixelsIterator.hasNext()) {
             Unit.Graduation graduation = pixelsIterator.next();
 
@@ -255,7 +261,7 @@ public class RulerView extends View {
             float distanceInPixels = Math.abs(topPointer.y - bottomPointer.y);
             labelText = unit.getStringRepresentationPure(distanceInPixels / unit.getPixelsPerUnit());
         }
-        if (mMoveDistanceCallBack!=null){
+        if (mMoveDistanceCallBack != null) {
             mMoveDistanceCallBack.distanceCallBack(labelText);
         }
 
@@ -317,7 +323,7 @@ public class RulerView extends View {
         }
 
         public String getStringRepresentationPure(float value) {
-            return String.format("%.3f %s", value,textUnit);
+            return String.format("%.3f %s", value, textUnit);
         }
 
         public Iterator<Graduation> getPixelIterator(final int numberOfPixels) {
